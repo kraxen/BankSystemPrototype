@@ -1,4 +1,7 @@
-﻿namespace BankSystemPrototype.Domain.UserModel
+﻿using BankSystemPrototype.Domain.BankModel;
+using System;
+
+namespace BankSystemPrototype.Domain.UserModel
 {
     /// <summary>
     /// Работник банка
@@ -9,6 +12,10 @@
         /// Идентификатор
         /// </summary>
         public long Id { get; set; }
+        /// <summary>
+        /// Банк, в котором зарегистрирован пользователь
+        /// </summary>
+        public Bank Bank { get; set; }
         /// <summary>
         /// Имя пользователя
         /// </summary>
@@ -57,6 +64,36 @@
         /// Может ли смотреть остаток на счете
         /// </summary>
         public bool IsCanReadAccountMoney { get => Type == UserType.Manager; }
+        /// <summary>
+        /// Может ли переводить денежные средства клиентов
+        /// </summary>
+        public bool IsCanDoTransaction { get => Type == UserType.Manager || Type == UserType.Employee; }
+        /// <summary>
+        /// Признак показывает авторизован ли пользователь
+        /// </summary>
+        private bool _isAuhtorize;
+        /// <summary>
+        /// Признак показывает авторизован ли пользователь
+        /// </summary>
+        public bool IsAuhtorize => _isAuhtorize;
+        /// <summary>
+        /// Попытка авторизоваться
+        /// </summary>
+        /// <param name="login"></param>
+        /// <param name="password"></param>
+        public void TryAuhtorize(string login, string password)
+        {
+            if (login != Login) throw new Exception("Некорректный логин");
+            if (password != Password) throw new Exception("Некорректный пароль");
+            _isAuhtorize = true;
+        }
+        /// <summary>
+        /// Выход из системы
+        /// </summary>
+        public void Exit()
+        {
+            _isAuhtorize = false;
+        }
     }
 
 }

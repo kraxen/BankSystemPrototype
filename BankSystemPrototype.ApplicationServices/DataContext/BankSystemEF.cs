@@ -31,10 +31,10 @@ namespace BankSystemPrototype.ApplicationServices.DataContex
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public async Task<Bank> GetBank(int id)
+        public async Task<Bank> GetBank(long id)
         {
             Bank bank = await Banks.FirstOrDefaultAsync(b => b.Id == id);
-            if (bank is null) throw new Exception("Банк не найден");
+            if (bank is null) throw new Exception("Банк не найден в базе данных");
             return bank;
         }
         /// <summary>
@@ -49,11 +49,13 @@ namespace BankSystemPrototype.ApplicationServices.DataContex
         /// Добавить новый пустой банк
         /// </summary>
         /// <returns></returns>
-        public async Task<Bank> AddEmptyBank(string bankName)
+        public async Task<Bank> AddEmptyBank(string bankName, string key)
         {
             _lastBankId++;
-            var bank = new Bank() { Name = bankName, Id = _lastBankId};
+            var bank = new Bank() { Name = bankName, Id = _lastBankId, SequrityKey = key};
             await Banks.AddAsync(bank);
+            await Users.AddRangeAsync(bank.Users);
+            SaveChangesAsync();
             return bank;
         }
         /// <summary>
@@ -61,10 +63,11 @@ namespace BankSystemPrototype.ApplicationServices.DataContex
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public async Task RemoveBank(int id)
+        public async Task RemoveBank(long id, string key)
         {
             var bank = await Banks.FirstOrDefaultAsync(b => b.Id == id);
-            if (bank is null) throw new Exception("Банка не существует");
+            if (bank is null) throw new Exception("Банка не существует в базе данных");
+            if (bank.SequrityKey != key) throw new Exception("Код безопасности не подходит, вы не можете удалить банк в базе данных");
             Banks.Remove(bank);
             Users.RemoveRange(bank.Users);
             foreach(var client in bank.Clients)
@@ -77,6 +80,7 @@ namespace BankSystemPrototype.ApplicationServices.DataContex
             }
             Accounts.RemoveRange(bank.Accounts);
             Transactions.RemoveRange(bank.Transactions);
+            SaveChangesAsync();
         }
         /// <summary>
         /// Добавление нового пользователя
@@ -86,12 +90,15 @@ namespace BankSystemPrototype.ApplicationServices.DataContex
         /// <param name="password"></param>
         /// <param name="type"></param>
         /// <returns></returns>
-        public async Task<User> AddUser(int bankId, string login, string password, UserType type)
+        public async Task<User> AddUser(long userId, long bankId, string login, string password, UserType type)
         {
             var bank = await Banks.FirstOrDefaultAsync(b => b.Id == bankId);
-            if (bank is null) throw new Exception("Банк не найден");
-            var user = bank.AddUser(login, password, type);
+            if (bank is null) throw new Exception("Банк не найден в базе данных");
+            var creator = await Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (creator is null) throw new Exception("Пользователь не найден в базе данных");
+            var user = bank.AddUser(creator, login, password, type);
             await Users.AddAsync(user);
+            SaveChangesAsync();
             return user;
         }
         /// <summary>
@@ -100,15 +107,76 @@ namespace BankSystemPrototype.ApplicationServices.DataContex
         /// <param name="bankId"></param>
         /// <param name="userId"></param>
         /// <returns></returns>
-        public async Task<User> RemoveUser(int bankId, int userId)
+        public async Task<User> RemoveUser(long creatorId, long bankId, long userId)
         {
             var bank = await Banks.FirstOrDefaultAsync(b => b.Id == bankId);
-            if (bank is null) throw new Exception("Банк не найден");
+            if (bank is null) throw new Exception("Банк не найден в базе данных");
             var user = await Users.FirstOrDefaultAsync(u => u.Id == userId);
-            if (user is null) throw new Exception("Пользователь не найден");
-            bank.RemoveUser(user.Id);
+            if (user is null) throw new Exception("Пользователь, которого нужно удалить, не найден в базе данных");
+            var creator = await Users.FirstOrDefaultAsync(u => u.Id == creatorId);
+            if (creator is null) throw new Exception("Пользователь, который производит удаление, не найден в базе данных");
+            bank.RemoveUser(creator, user.Id);
             Users.Remove(user);
+            SaveChangesAsync();
             return user;
+        }
+        /// <summary>
+        /// Добавление компании
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="bankId"></param>
+        /// <param name="inn"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public async Task<Company> AddCompany(long userId, long bankId, string inn, string name)
+        {
+            var user = await Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user is null) throw new Exception("Пользователь не найден в базе данных");
+
+            var bank = await Banks.FirstOrDefaultAsync(b => b.Id == bankId);
+            if (bank is null) throw new Exception("Банк не найден в базе данных");
+
+            var company = bank.AddCompany(user, inn, name);
+            Companies.Add(company);
+            SaveChangesAsync();
+            return company;
+        }
+        /// <summary>
+        /// Авторизация пользователя в системе
+        /// </summary>
+        /// <param name="bankId"></param>
+        /// <param name="login"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
+        public async Task UserAuhtorize(long bankId, string login, string password)
+        {
+            var bank = await Banks.FirstOrDefaultAsync(b => b.Id == bankId);
+            if (bank is null) throw new Exception("Банк не найден в базе данных");
+
+            var user = await Users.FirstOrDefaultAsync(u => u.Login == login);
+            if (user is null) throw new Exception("Пользователь не найден в базе данных");
+
+            user.TryAuhtorize(login, password);
+            bank.UserAuhtorize(login, password);
+            SaveChangesAsync();
+        }
+        /// <summary>
+        /// Вызод пользователя из системы
+        /// </summary>
+        /// <param name="bankId"></param>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public async Task UserExit(long bankId, long userId)
+        {
+            var bank = await Banks.FirstOrDefaultAsync(b => b.Id == bankId);
+            if (bank is null) throw new Exception("Банк не найден в базе данных");
+
+            var user = await Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user is null) throw new Exception("Пользователь не найден в базе данных");
+
+            user.Exit();
+            bank.UserExit(userId);
+            SaveChangesAsync();
         }
     }
 }

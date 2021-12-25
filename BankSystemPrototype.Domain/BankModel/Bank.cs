@@ -60,6 +60,10 @@ namespace BankSystemPrototype.Domain.BankModel
         /// </summary>
         public IReadOnlyCollection<Transaction> Transactions => _transactions;
         /// <summary>
+        /// Код безопасности при добавлении, удалении банка
+        /// </summary>
+        public string SequrityKey { get; init; }
+        /// <summary>
         /// Банковская система
         /// </summary>
         public Bank()
@@ -69,6 +73,7 @@ namespace BankSystemPrototype.Domain.BankModel
             _transactions = new();
             _users = new();
             Name = String.Empty;
+            SequrityKey = String.Empty;
         }
         /// <summary>
         /// Банковская система
@@ -87,12 +92,20 @@ namespace BankSystemPrototype.Domain.BankModel
                 _transactions = transactions;
                 _lastTransactionId = _transactions.Max(t => t.Id);
             }
-            if(users is not null)
+            if (users is not null)
             {
                 _users = users;
                 _lastUserId = _users.Max(u => u.Id);
             }
             Name = String.Empty;
+            Users.Add(new User()
+            {
+                Id = _lastUserId,
+                Login = "admin",
+                Password = "admin",
+                Type = UserType.Admin
+            });
+            _lastUserId++;
         }
         /// <summary>
         /// Банковская система
@@ -124,17 +137,18 @@ namespace BankSystemPrototype.Domain.BankModel
         /// </summary>
         /// <param name="login"></param>
         /// <param name="password"></param>
-        public User AddUser(string login, string password, UserType type)
+        public User AddUser(User _user, string login, string password, UserType type)
         {
+            if (!_user.IsUserCanAddUser) throw new Exception("Данный пользователь не может добавлять новых пользователей");
             if (_users.Any(u => u.Login == login)) throw new Exception("Пользователь с данным логином уже существует");
             _lastUserId++;
             var user = new User() { Login = login, Password = password, Type = type, Id = _lastUserId };
             _users.Add(user);
             return user;
         }
-
-        public void RemoveUser(long id)
+        public void RemoveUser(User _user, long id)
         {
+            if (!_user.IsUserCanRemoveUser) throw new Exception("Данный пользователь не может удалять пользователей");
             User user = _users.FirstOrDefault(u => u.Id == id);
             if (user is null) throw new Exception("Пользователя не существует");
             _users.Remove(user);
@@ -144,36 +158,43 @@ namespace BankSystemPrototype.Domain.BankModel
         /// </summary>
         /// <param name="firstName">имя</param>
         /// <param name="lastName">фамилия</param>
-        public void AddIndividual(User user, string firstName, string lastName)
+        public Individual AddIndividual(User user, string firstName, string lastName)
         {
+            if (!user.IsUserCanAddClient) throw new Exception("Данный пользователь не может создавать клиентов");
             _lastClientId++;
-            _clients.Add(new Individual
+            var individual = new Individual
             {
                 Id = _lastClientId,
                 FirstName = firstName,
                 LastName = lastName
-            });
+            };
+            _clients.Add(individual);
+            return individual;
         }
         /// <summary>
         /// Добавить компанию
         /// </summary>
         /// <param name="inn">ИНН компании</param>
         /// <param name="name">Наименование компании</param>
-        public void AddCompany(string inn, string name)
+        public Company AddCompany(User user, string inn, string name)
         {
-            _lastClientId++;
+            if (!user.IsUserCanAddClient) throw new Exception("Данный пользователь не может создавать клиентов");
             if (inn.Length != 10 || inn.Length != 12) throw new FormatException("ИНН должен содержать 10 или 12 символов");
             if (!Int64.TryParse(inn, out var longInn)) throw new FormatException("ИНН должен состоять только из цифр");
 
-            _clients.Add(new Company
+            _lastClientId++;
+            var company = new Company
             {
                 Id = _lastClientId,
                 INN = inn,
                 Name = name
-            });
+            };
+            _clients.Add(company);
+            return company;
         }
-        public void RemoveClient(long clientId)
+        public void RemoveClient(User user, long clientId)
         {
+            if (!user.IsUserCanRemoveClient) throw new Exception("Данный пользователь не может удалять клиентов");
             var client = _clients.FirstOrDefault(c => c.Id == clientId);
             if (client is null) throw new Exception("Не удалось найти клиента по заданному id");
 
@@ -185,8 +206,9 @@ namespace BankSystemPrototype.Domain.BankModel
         /// <param name="clientId">Id клиента</param>
         /// <param name="type">Тип счета</param>
         /// <param name="money">Деньги на счете</param>
-        public void AddAccount(long clientId, AccountType type, decimal money = 0)
+        public void AddAccount(User user, long clientId, AccountType type, decimal money = 0)
         {
+            if (!user.IsUserCanAddAccount) throw new Exception("Данный пользователь не может добавлять счета");
             var client = _clients.FirstOrDefault(c => c.Id == clientId);
             if (client is null) throw new Exception("Не удалось найти клиента по Id при добавлении счета");
 
@@ -204,8 +226,9 @@ namespace BankSystemPrototype.Domain.BankModel
         /// Удаление счета
         /// </summary>
         /// <param name="accountId"></param>
-        public void RemoveAccount(long accountId)
+        public void RemoveAccount(User user, long accountId)
         {
+            if (!user.IsUserCanRemoveAccount) throw new Exception("Данный пользователь не может удалять счета");
             var account = _accounts.FirstOrDefault(a => a.Id == accountId);
             if (account is null) throw new Exception("Не удалось найти счет по Id при удалении счета");
 
@@ -214,8 +237,18 @@ namespace BankSystemPrototype.Domain.BankModel
             // Удаление счета из банка
             _accounts.Remove(account);
         }
-        public TransactionInfo AddTransaction(long senderAccountId, long resipientAccountId, decimal money)
+        /// <summary>
+        /// Проведение транзакции
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="senderAccountId"></param>
+        /// <param name="resipientAccountId"></param>
+        /// <param name="money"></param>
+        /// <returns></returns>
+        public TransactionInfo AddTransaction(User user, long senderAccountId, long resipientAccountId, decimal money)
         {
+            if (!user.IsCanDoTransaction) throw new Exception("Данный пользователь не может проводить транзакции");
+            
             if (money < 0) throw new FormatException("Нельзя сделать перевод на отрицательную сумму");
 
             var sender = Accounts.FirstOrDefault(a => a.Id == senderAccountId);
@@ -238,6 +271,27 @@ namespace BankSystemPrototype.Domain.BankModel
             _transactions.Add(transaction);
 
             return transaction.GetInfo();
+        }
+        /// <summary>
+        /// Вход пользователя в банк
+        /// </summary>
+        /// <param name="login"></param>
+        /// <param name="password"></param>
+        public void UserAuhtorize(string login, string password)
+        {
+            var user = Users.FirstOrDefault(u => u.Login == login);
+            if (user is null) throw new Exception("Некорректный логин");
+            user.TryAuhtorize(login,password);
+        }
+        /// <summary>
+        /// Выход пользователя из системы
+        /// </summary>
+        /// <param name="userId"></param>
+        public void UserExit(long userId)
+        {
+            var user = Users.FirstOrDefault(u => u.Id == userId);
+            if (user is null) throw new Exception("Некорректный логин");
+            user.Exit();
         }
     }
 }
