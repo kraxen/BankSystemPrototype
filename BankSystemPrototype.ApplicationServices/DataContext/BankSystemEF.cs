@@ -14,6 +14,7 @@ namespace BankSystemPrototype.ApplicationServices.DataContex
 {
     public class BankSystemEF : DbContext
     {
+        private long _lastBankId = 0;
         public DbSet<Bank> Banks { get; set; }
         public DbSet<Company> Companies { get; set; }
         public DbSet<Individual> Individuals { get; set; }
@@ -50,7 +51,8 @@ namespace BankSystemPrototype.ApplicationServices.DataContex
         /// <returns></returns>
         public async Task<Bank> AddEmptyBank(string bankName)
         {
-            var bank = new Bank() { Name = bankName };
+            _lastBankId++;
+            var bank = new Bank() { Name = bankName, Id = _lastBankId};
             await Banks.AddAsync(bank);
             return bank;
         }
@@ -75,6 +77,38 @@ namespace BankSystemPrototype.ApplicationServices.DataContex
             }
             Accounts.RemoveRange(bank.Accounts);
             Transactions.RemoveRange(bank.Transactions);
+        }
+        /// <summary>
+        /// Добавление нового пользователя
+        /// </summary>
+        /// <param name="bankId"></param>
+        /// <param name="login"></param>
+        /// <param name="password"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public async Task<User> AddUser(int bankId, string login, string password, UserType type)
+        {
+            var bank = await Banks.FirstOrDefaultAsync(b => b.Id == bankId);
+            if (bank is null) throw new Exception("Банк не найден");
+            var user = bank.AddUser(login, password, type);
+            await Users.AddAsync(user);
+            return user;
+        }
+        /// <summary>
+        /// Удаление пользователя
+        /// </summary>
+        /// <param name="bankId"></param>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public async Task<User> RemoveUser(int bankId, int userId)
+        {
+            var bank = await Banks.FirstOrDefaultAsync(b => b.Id == bankId);
+            if (bank is null) throw new Exception("Банк не найден");
+            var user = await Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user is null) throw new Exception("Пользователь не найден");
+            bank.RemoveUser(user.Id);
+            Users.Remove(user);
+            return user;
         }
     }
 }
