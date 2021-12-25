@@ -69,6 +69,14 @@ namespace BankSystemPrototype.Domain.UserModel
         /// </summary>
         public bool IsCanDoTransaction { get => Type == UserType.Manager || Type == UserType.Employee; }
         /// <summary>
+        /// Может ли добавлять деньги на счет
+        /// </summary>
+        public bool IsCanAddMoney => Type == UserType.Manager || Type == UserType.Employee;
+        /// <summary>
+        /// Может ли снимать деньги со счета
+        /// </summary>
+        public bool IsCanSubtractMoney => Type == UserType.Manager || Type == UserType.Employee;
+        /// <summary>
         /// Признак показывает авторизован ли пользователь
         /// </summary>
         private bool _isAuhtorize;

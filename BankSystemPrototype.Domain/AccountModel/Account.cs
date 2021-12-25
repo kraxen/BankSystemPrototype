@@ -73,5 +73,14 @@ namespace BankSystemPrototype.Domain.AccountModel
             _money -= money;
             return true;
         }
+        /// <summary>
+        /// Промотать один год
+        /// </summary>
+        public void OneYearLate()
+        {
+            if (Type == AccountType.Account) return;
+            if (Type == AccountType.Deposit) _money += _money * Persent / 100;
+            else _money -= _money * Persent / 100;
+        }
     }
 }

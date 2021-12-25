@@ -206,7 +206,7 @@ namespace BankSystemPrototype.Domain.BankModel
         /// <param name="clientId">Id клиента</param>
         /// <param name="type">Тип счета</param>
         /// <param name="money">Деньги на счете</param>
-        public void AddAccount(User user, long clientId, AccountType type, decimal money = 0)
+        public Account AddAccount(User user, long clientId, AccountType type, decimal money = 0)
         {
             if (!user.IsUserCanAddAccount) throw new Exception("Данный пользователь не может добавлять счета");
             var client = _clients.FirstOrDefault(c => c.Id == clientId);
@@ -221,6 +221,7 @@ namespace BankSystemPrototype.Domain.BankModel
                 Money = money
             };
             client.AddAccount(account);
+            return account;
         }
         /// <summary>
         /// Удаление счета
@@ -245,7 +246,7 @@ namespace BankSystemPrototype.Domain.BankModel
         /// <param name="resipientAccountId"></param>
         /// <param name="money"></param>
         /// <returns></returns>
-        public TransactionInfo AddTransaction(User user, long senderAccountId, long resipientAccountId, decimal money)
+        public Transaction AddTransaction(User user, long senderAccountId, long resipientAccountId, decimal money)
         {
             if (!user.IsCanDoTransaction) throw new Exception("Данный пользователь не может проводить транзакции");
             
@@ -270,7 +271,7 @@ namespace BankSystemPrototype.Domain.BankModel
 
             _transactions.Add(transaction);
 
-            return transaction.GetInfo();
+            return transaction;
         }
         /// <summary>
         /// Вход пользователя в банк
@@ -292,6 +293,39 @@ namespace BankSystemPrototype.Domain.BankModel
             var user = Users.FirstOrDefault(u => u.Id == userId);
             if (user is null) throw new Exception("Некорректный логин");
             user.Exit();
+        }
+        /// <summary>
+        /// Промотать один год
+        /// </summary>
+        public void OneYearLate()
+        {
+            foreach (var a in Accounts) a.OneYearLate();
+        }
+        /// <summary>
+        /// Добавление денег на счет
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="accountId"></param>
+        /// <param name="money"></param>
+        public void AddMoney(User user, long accountId, decimal money)
+        {
+            if (!user.IsCanAddMoney) throw new Exception("Данный пользователь не может добавлять деньги на счет");
+            var account = Accounts.FirstOrDefault(a => a.Id == accountId);
+
+            account.AddMoney(money);
+        }
+        /// <summary>
+        /// Удаление денег со счета
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="accountId"></param>
+        /// <param name="money"></param>
+        public void SubtractMoney(User user, long accountId, decimal money)
+        {
+            if (!user.IsCanSubtractMoney) throw new Exception("Данный пользователь не может снимать деньги со счета");
+            var account = Accounts.FirstOrDefault(a => a.Id == accountId);
+
+            if(!account.SubtractMoney(money)) throw new Exception("На счете меньше денег, чем требуется вычесть. Невозможно выполнить операцию.");
         }
     }
 }

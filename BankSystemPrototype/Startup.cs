@@ -1,3 +1,4 @@
+using BankSystemPrototype.ApplicationServices.DataContex;
 using BankSystemPrototype.Domain.BankModel;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -27,13 +28,7 @@ namespace BankSystemPrototype
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
-            services.AddControllers();
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "BankSystemPrototype", Version = "v1" });
-            });
-            services.AddSingleton(new Bank());
+            
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
