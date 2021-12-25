@@ -20,6 +20,10 @@ namespace BankSystemPrototype.Domain.BankModel
         /// </summary>
         public long Id { get; set; }
         /// <summary>
+        /// Название банка
+        /// </summary>
+        public string Name { get; init; }
+        /// <summary>
         /// Пользователи банка
         /// </summary>
         private List<User> _users;
@@ -60,6 +64,7 @@ namespace BankSystemPrototype.Domain.BankModel
             _accounts = new();
             _transactions = new();
             _users = new();
+            Name = String.Empty;
         }
         /// <summary>
         /// Банковская система
@@ -78,6 +83,7 @@ namespace BankSystemPrototype.Domain.BankModel
             {
                 _users = users;
             }
+            Name = String.Empty;
         }
         /// <summary>
         /// Банковская система
@@ -97,6 +103,7 @@ namespace BankSystemPrototype.Domain.BankModel
             {
                 _users = users;
             }
+            Name = String.Empty;
         }
         /// <summary>
         /// Добавление нового пользователя
