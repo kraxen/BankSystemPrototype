@@ -59,12 +59,13 @@ namespace BankSystemPrototype.Domain.BankModel
             _clients = new();
             _accounts = new();
             _transactions = new();
+            _users = new();
         }
         /// <summary>
         /// Банковская система
         /// </summary>
         /// <param name="clients">Клиенты банка</param>
-        public Bank(List<Client> clients, List<Transaction> transactions = null) : this()
+        public Bank(List<User> users, List<Client> clients, List<Transaction> transactions = null) : this()
         {
             _clients.AddRange(clients);
             _clients.ForEach(c => _accounts.AddRange(c.GetAccounts));
@@ -73,12 +74,16 @@ namespace BankSystemPrototype.Domain.BankModel
             {
                 _transactions = transactions;
             }
+            if(users is not null)
+            {
+                _users = users;
+            }
         }
         /// <summary>
         /// Банковская система
         /// </summary>
         /// <param name="accounts">Счета банка</param>
-        public Bank(List<Account> accounts, List<Transaction> transactions = null) : this()
+        public Bank(List<User> users, List<Account> accounts, List<Transaction> transactions = null) : this()
         {
             _accounts.AddRange(accounts);
             _accounts.ForEach(a => _clients.Add(a.Owner));
@@ -88,13 +93,34 @@ namespace BankSystemPrototype.Domain.BankModel
             {
                 _transactions = transactions;
             }
+            if (users is not null)
+            {
+                _users = users;
+            }
+        }
+        /// <summary>
+        /// Добавление нового пользователя
+        /// </summary>
+        /// <param name="login"></param>
+        /// <param name="password"></param>
+        public void AddUser(string login, string password, UserType type)
+        {
+            if (_users.Any(u => u.Login == login)) throw new Exception("Пользователь с данным логином уже существует");
+            _users.Add(new User() { Login = login, Password = password, Type = type});
+        }
+
+        public void RemoveUser(long id)
+        {
+            User user = _users.FirstOrDefault(u => u.Id == id);
+            if (user is null) throw new Exception("Пользователя не существует");
+            _users.Remove(user);
         }
         /// <summary>
         /// Добавить физ клиента
         /// </summary>
         /// <param name="firstName">имя</param>
         /// <param name="lastName">фамилия</param>
-        public void AddIndividual(string firstName, string lastName)
+        public void AddIndividual(User user, string firstName, string lastName)
         {
             _clients.Add(new Individual
             {
