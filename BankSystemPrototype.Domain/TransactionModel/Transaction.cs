@@ -1,4 +1,5 @@
 ﻿using BankSystemPrototype.Domain.AccountModel;
+using BankSystemPrototype.Domain.BankModel;
 using System;
 
 namespace BankSystemPrototype.Domain.TransactionModel
@@ -30,7 +31,10 @@ namespace BankSystemPrototype.Domain.TransactionModel
         /// Информация о переводе
         /// </summary>
         public TransactionInfo TransactionInfo { get; init; }
-
+        /// <summary>
+        /// Банк, в котором проведена транзакция
+        /// </summary>
+        public Bank Bank { get; set; }
         public Transaction()
         {
             TransactionInfo = new() { State = TransactionState.New, Message = "" };

@@ -23,18 +23,13 @@ namespace BankSystemPrototype.Infrastructure.Logs.Middlewares
         {
             try
             {
-                if (string.Equals(context.Request.ContentType, "application/grpc", StringComparison.OrdinalIgnoreCase))
-                    await _next(context);
-                else
-                {
-                    var originalResponseBody = context.Response.Body;
-                    using var memmoryStreamResponseBody = new MemoryStream();
-                    context.Response.Body = memmoryStreamResponseBody;
-                    LogRequest(context);
-                    await _next(context);
-                    await LogResponse(context);
-                    await memmoryStreamResponseBody.CopyToAsync(originalResponseBody);
-                }
+                var originalResponseBody = context.Response.Body;
+                using var memmoryStreamResponseBody = new MemoryStream();
+                context.Response.Body = memmoryStreamResponseBody;
+                LogRequest(context);
+                await _next(context);
+                await LogResponse(context);
+                await memmoryStreamResponseBody.CopyToAsync(originalResponseBody);
             }
             catch (Exception e)
             {

@@ -15,10 +15,6 @@ namespace BankSystemPrototype.Domain.BankModel
     /// </summary>
     public class Bank
     {
-        private long _lastUserId = 0;
-        private long _lastClientId = 0;
-        private long _lastAccountId = 0;
-        private long _lastTransactionId = 0;
         /// <summary>
         /// Id банка
         /// </summary>
@@ -74,6 +70,12 @@ namespace BankSystemPrototype.Domain.BankModel
             _users = new();
             Name = String.Empty;
             SequrityKey = String.Empty;
+            Users.Add(new User()
+            {
+                Login = "admin",
+                Password = "admin",
+                Type = UserType.Admin
+            });
         }
         /// <summary>
         /// Банковская система
@@ -84,28 +86,16 @@ namespace BankSystemPrototype.Domain.BankModel
             _clients.AddRange(clients);
             _clients.ForEach(c => _accounts.AddRange(c.GetAccounts));
 
-            _lastClientId = _clients.Max(c => c.Id);
-            _lastAccountId = _accounts.Max(a => a.Id);
 
             if (transactions is not null)
             {
                 _transactions = transactions;
-                _lastTransactionId = _transactions.Max(t => t.Id);
             }
             if (users is not null)
             {
                 _users = users;
-                _lastUserId = _users.Max(u => u.Id);
             }
             Name = String.Empty;
-            Users.Add(new User()
-            {
-                Id = _lastUserId,
-                Login = "admin",
-                Password = "admin",
-                Type = UserType.Admin
-            });
-            _lastUserId++;
         }
         /// <summary>
         /// Банковская система
@@ -117,18 +107,13 @@ namespace BankSystemPrototype.Domain.BankModel
             _accounts.ForEach(a => _clients.Add(a.Owner));
             _clients = _clients.Distinct().ToList();
 
-            _lastClientId = _clients.Max(c => c.Id);
-            _lastAccountId = _accounts.Max(a => a.Id);
-
             if (transactions is not null)
             {
                 _transactions = transactions;
-                _lastTransactionId = _transactions.Max(t => t.Id);
             }
             if (users is not null)
             {
                 _users = users;
-                _lastUserId = _users.Max(u => u.Id);
             }
             Name = String.Empty;
         }
@@ -141,8 +126,7 @@ namespace BankSystemPrototype.Domain.BankModel
         {
             if (!_user.IsUserCanAddUser) throw new Exception("Данный пользователь не может добавлять новых пользователей");
             if (_users.Any(u => u.Login == login)) throw new Exception("Пользователь с данным логином уже существует");
-            _lastUserId++;
-            var user = new User() { Login = login, Password = password, Type = type, Id = _lastUserId };
+            var user = new User() { Login = login, Password = password, Type = type };
             _users.Add(user);
             return user;
         }
@@ -161,10 +145,8 @@ namespace BankSystemPrototype.Domain.BankModel
         public Individual AddIndividual(User user, string firstName, string lastName)
         {
             if (!user.IsUserCanAddClient) throw new Exception("Данный пользователь не может создавать клиентов");
-            _lastClientId++;
             var individual = new Individual
             {
-                Id = _lastClientId,
                 FirstName = firstName,
                 LastName = lastName
             };
@@ -182,10 +164,8 @@ namespace BankSystemPrototype.Domain.BankModel
             if (inn.Length != 10 || inn.Length != 12) throw new FormatException("ИНН должен содержать 10 или 12 символов");
             if (!Int64.TryParse(inn, out var longInn)) throw new FormatException("ИНН должен состоять только из цифр");
 
-            _lastClientId++;
             var company = new Company
             {
-                Id = _lastClientId,
                 INN = inn,
                 Name = name
             };
@@ -212,10 +192,8 @@ namespace BankSystemPrototype.Domain.BankModel
             var client = _clients.FirstOrDefault(c => c.Id == clientId);
             if (client is null) throw new Exception("Не удалось найти клиента по Id при добавлении счета");
 
-            _lastAccountId++;
             var account = new Account
             {
-                Id = _lastAccountId,
                 Type = type,
                 Owner = client,
                 Money = money
@@ -258,10 +236,8 @@ namespace BankSystemPrototype.Domain.BankModel
             var resipient = Accounts.FirstOrDefault(a => a.Id == resipientAccountId);
             if (resipient is null) throw new Exception("Не удалось найти счет получателя по id");
 
-            _lastTransactionId++;
             var transaction = new Transaction
             {
-                Id = _lastTransactionId,
                 ResipientAccount = resipient,
                 SenderAccount = sender
             };

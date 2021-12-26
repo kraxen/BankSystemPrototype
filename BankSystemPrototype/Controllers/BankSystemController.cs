@@ -167,6 +167,20 @@ namespace BankSystemPrototype.Controllers
         }
 
         /// <summary>
+        /// Получить список всех пользователей базы данных
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("GetUsers")]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(IReadOnlyCollection<User>), 200)]
+        [ProducesResponseType(400)]
+        public async Task<ActionResult<IReadOnlyCollection<User>>> GetUsers([FromQuery] long bankId)
+        {
+            return Ok(await _db.GetUsers(bankId));
+        }
+        
+
+        /// <summary>
         /// Получить клиентов по id банка
         /// </summary>
         /// <param name="bankId">id банка</param>
@@ -267,7 +281,7 @@ namespace BankSystemPrototype.Controllers
         /// <param name="bankId"></param>
         /// <param name="key"></param>
         /// <returns></returns>
-        [HttpPost("RemoveClient")]
+        [HttpPost("RemoveUser")]
         [Produces("application/json")]
         [ProducesResponseType(typeof(User), 200)]
         [ProducesResponseType(400)]
@@ -295,7 +309,7 @@ namespace BankSystemPrototype.Controllers
         [HttpPost("UserAuhtorize")]
         [Produces("application/json")]
         [ProducesResponseType(200)]
-        [ProducesResponseType(400 ) ]
+        [ProducesResponseType(400 )]
         public async Task<ActionResult> UserAuhtorize([FromBody] UserAuhtorizeModel model)
         {
             await _db.UserAuhtorize(model.BankId, model.Login, model.Password);

@@ -14,7 +14,6 @@ namespace BankSystemPrototype.ApplicationServices.DataContex
 {
     public class BankSystemEF : DbContext, IBankSystemDataContext
     {
-        private long _lastBankId = 0;
         public DbSet<Bank> Banks { get; set; }
         public DbSet<Company> Companies { get; set; }
         public DbSet<Individual> Individuals { get; set; }
@@ -77,15 +76,26 @@ namespace BankSystemPrototype.ApplicationServices.DataContex
             return bank.Transactions;
         }
         /// <summary>
+        /// Получить список пользователей банка
+        /// </summary>
+        /// <param name="bankId"></param>
+        /// <returns></returns>
+        public async Task<IReadOnlyCollection<User>> GetUsers(long bankId)
+        {
+            var bank = await Banks.FirstOrDefaultAsync(b => b.Id == bankId);
+            if (bank is null) throw new Exception("Банк не найден в базе данных");
+
+            return bank.Users;
+        }
+        /// <summary>
         /// Добавить новый пустой банк
         /// </summary>
         /// <returns></returns>
         public async Task<Bank> AddEmptyBank(string bankName, string key)
         {
-            _lastBankId++;
-            var bank = new Bank() { Name = bankName, Id = _lastBankId, SequrityKey = key };
+            if (await Banks.AnyAsync(b => b.Name == bankName)) throw new Exception("Банк с таким именем уже существует");
+            var bank = new Bank() { Name = bankName, SequrityKey = key };
             await Banks.AddAsync(bank);
-            await Users.AddRangeAsync(bank.Users);
             await SaveChangesAsync();
             return bank;
         }
@@ -100,17 +110,11 @@ namespace BankSystemPrototype.ApplicationServices.DataContex
             if (bank is null) throw new Exception("Банка не существует в базе данных");
             if (bank.SequrityKey != key) throw new Exception("Код безопасности не подходит, вы не можете удалить банк в базе данных");
             Banks.Remove(bank);
-            Users.RemoveRange(bank.Users);
-            foreach (var client in bank.Clients)
-            {
-                if (client.GetType() is Company) Companies.Remove(Companies.First(c => c.Id == client.Id));
-                else if (client.GetType() is Individual) Individuals.Remove(Individuals.First(c => c.Id == client.Id));
-
-                //if (client.GetType() is Company) Companies.Remove((Company)client);
-                //else if (client.GetType() is Individual) Individuals.Remove((Individual)client);
-            }
-            Accounts.RemoveRange(bank.Accounts);
-            Transactions.RemoveRange(bank.Transactions);
+            Users.RemoveRange(Users.Where(u => u.Bank.Id == bank.Id));
+            Individuals.RemoveRange(Individuals.Where(i => i.Bank.Id == bank.Id));
+            Companies.RemoveRange(Companies.Where(c => c.Bank.Id == bank.Id));
+            Accounts.RemoveRange(Accounts.Where(a => a.Owner.Bank.Id == bank.Id));
+            Transactions.RemoveRange(Transactions.Where(t=>t.Bank.Id == bank.Id));
             await SaveChangesAsync();
         }
         /// <summary>

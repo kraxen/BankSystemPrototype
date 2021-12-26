@@ -1,4 +1,5 @@
 ﻿using BankSystemPrototype.Domain.AccountModel;
+using BankSystemPrototype.Domain.BankModel;
 using System;
 using System.Collections.Generic;
 
@@ -27,6 +28,10 @@ namespace BankSystemPrototype.Domain.ClientModel
             if (account.Owner != this) throw new Exception("Попытка добавить чужой счет");
             Accounts.Add(account);
         }
+        /// <summary>
+        /// Банк, в котором находится клиент
+        /// </summary>
+        public Bank Bank { get; set; }
         /// <summary>
         /// Удаление счета
         /// </summary>

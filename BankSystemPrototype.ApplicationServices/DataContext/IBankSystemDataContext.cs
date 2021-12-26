@@ -20,6 +20,7 @@ namespace BankSystemPrototype.ApplicationServices.DataContex
         Task<IReadOnlyCollection<Account>> GetAccounts(long bankId);
         Task<Bank> GetBank(long id);
         Task<IReadOnlyCollection<Bank>> GetBanks();
+        Task<IReadOnlyCollection<User>> GetUsers(long bankId);
         Task<IReadOnlyCollection<Client>> GetClients(long bankId);
         Task<IReadOnlyCollection<Transaction>> GetTransactions(long bankId);
         Task OneYearLate(long userId, long bankId);

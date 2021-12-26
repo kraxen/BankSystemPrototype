@@ -1,10 +1,10 @@
 ﻿using System;
 using System.IO;
-using BankSystemPrototype.Infrastructure.Swagger.StartupFilters;
 using BankSystemPrototype.Infrastructure.Version.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
+using BankSystemPrototype.Infrastructure.Swagger.StartupFilters;
 
 namespace BankSystemPrototype.Infrastructure.Swagger.Services
 {

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace OzonEdu.MerchandiseService.Infrastructure.Extensions
+namespace BankSystemPrototype.Infrastructure.Extensions
 {
     public static class HostBuilderExtensions
     {
@@ -15,11 +15,11 @@ namespace OzonEdu.MerchandiseService.Infrastructure.Extensions
         {
             builder.ConfigureServices(services =>
             {
-                services.AddSingleton<IStartupFilter, LogsStartupFilter>();
+                //services.AddSingleton<IStartupFilter, LogsStartupFilter>();
                 services.AddSwaggerService();
                 services.AddSingleton<IStartupFilter, VersionStartupFilter>();
-                services.AddControllers(options => options.Filters.Add<GlobalExceptionFilter>()); 
-                services.AddSingleton<IBankSystemDataContext, BankSystemEF>();
+                services.AddControllers(options => options.Filters.Add<GlobalExceptionFilter>());
+                services.AddTransient<IBankSystemDataContext, BankSystemEF>();
             });
             return builder;
         }

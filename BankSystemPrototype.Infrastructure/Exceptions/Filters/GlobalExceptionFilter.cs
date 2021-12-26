@@ -17,7 +17,7 @@ namespace BankSystemPrototype.Infrastructure.Exceptions.Filters
 
             var jsonResult = new JsonResult(resultObject)
             {
-                StatusCode = StatusCodes.Status500InternalServerError
+                StatusCode = StatusCodes.Status400BadRequest
             };
             context.Result = jsonResult;
         }
